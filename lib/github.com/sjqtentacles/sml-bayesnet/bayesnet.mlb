@@ -1,0 +1,4 @@
+$(SML_LIB)/basis/basis.mlb
+../sml-distrib/distrib.mlb
+bayesnet.sig
+bayesnet.sml
