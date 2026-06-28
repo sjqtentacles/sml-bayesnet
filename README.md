@@ -4,7 +4,8 @@
 
 Discrete Bayesian network inference for Standard ML. Builds networks of binary
 random variables with Conditional Probability Tables (CPTs) and performs exact
-inference via full enumeration.
+inference via full enumeration: arbitrary-evidence conditional queries,
+marginals, joint probabilities, and the MAP (most-probable) assignment.
 
 ## API sketch
 
@@ -12,13 +13,28 @@ inference via full enumeration.
 (* Use the built-in sprinkler network *)
 val net : BayesNet.net = BayesNet.sprinkler ()
 
-(* Compute P(Rain = true | WetGrass = true) *)
-val p : real = BayesNet.query net "Rain" 1
+(* Conditional query with arbitrary evidence: P(Rain=true | WetGrass=true) *)
+val p : real = BayesNet.query net "Rain" true [("WetGrass", true)]
 (* p ≈ 0.357 *)
 
-(* P(Sprinkler = false | WetGrass = true) *)
-val q : real = BayesNet.query net "Sprinkler" 0
+(* Marginal (no evidence): P(Rain = true) *)
+val m : real = BayesNet.marginal net "Rain" true        (* 0.2 *)
+
+(* Joint probability of a complete assignment *)
+val j : real =
+  BayesNet.jointProb net [("Rain",true),("Sprinkler",false),("WetGrass",true)]
+(* 0.18 *)
+
+(* MAP: the single most-probable full assignment given evidence *)
+val (assign, post) = BayesNet.mostProbable net [("WetGrass", true)]
+(* assign = [("Rain",false),("Sprinkler",true),("WetGrass",true)] *)
 ```
+
+> **Breaking change:** `query` now takes an explicit evidence list as its final
+> argument — `query : net -> var -> bool -> (var * bool) list -> real`. The
+> previous form hardcoded the evidence to "the last variable is true"; to
+> reproduce it, pass `[(lastVar, true)]` (or `[]` for the unconditioned
+> marginal, which is also available as `marginal`).
 
 ## Sprinkler network structure
 
@@ -44,14 +60,13 @@ type net = { order   : var list
 
 ## Known limitations
 
-- **Binary variables only**: each variable must have exactly two states (false=0,
-  true=1). Multi-valued variables are not supported.
+- **Binary variables only**: each variable must have exactly two states (false,
+  true). Multi-valued variables are not supported.
 - **Full enumeration**: inference is O(2^n) in the number of network variables.
   For networks with more than ~20 variables this becomes impractical. Variable
   elimination with factor operations is not yet implemented.
-- **No evidence clamping**: `query` conditions on no evidence beyond the built-in
-  network structure; injecting arbitrary evidence requires constructing a new
-  network or extending the API.
+- `jointProb` requires a **complete** assignment (every variable present);
+  missing or unknown variables raise `Fail`.
 - No learning from data (parameter estimation / structure learning).
 
 ## Installing with smlpkg
@@ -83,10 +98,10 @@ sml.pkg
 Makefile
 lib/github.com/sjqtentacles/sml-bayesnet/
   bayesnet.sig     BAYESNET signature
-  bayesnet.sml     CPT representation + enumeration inference
+  bayesnet.sml     CPT representation + enumeration inference (query/marginal/MAP)
   bayesnet.mlb
 test/
-  test.sml         sprinkler P(Rain|WetGrass) ≈ 0.357 test
+  test.sml         query/marginal/jointProb/mostProbable on the sprinkler net
 ```
 
 ## License
