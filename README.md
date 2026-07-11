@@ -48,6 +48,27 @@ Rain  →  Sprinkler
 |---|---|---|---|---|
 | 0.2 | 0.5 | 0.1 | 0.0 | ... |
 
+## Example
+
+`make example` builds and runs [`examples/demo.sml`](examples/demo.sml), which
+runs the joint/marginal/conditional/MAP queries above against the sprinkler
+network and prints their results (output is byte-identical under MLton and
+Poly/ML):
+
+```
+Sprinkler network: Rain -> Sprinkler, Rain -> WetGrass, Sprinkler -> WetGrass
+
+P(Rain=T, Sprinkler=F, WetGrass=T) = 0.1800
+P(Rain=T)                          = 0.2000
+P(Rain=T | WetGrass=T)             = 0.3571
+
+MAP assignment given WetGrass=T:
+  Rain = false
+  Sprinkler = true
+  WetGrass = true
+  posterior probability             = 0.6429
+```
+
 ## Types
 
 ```sml
